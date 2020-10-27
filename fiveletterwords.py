@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Apr 13 11:08:01 2016
+#@author: Timothy Fleck
 
-@author: odin
-"""
 import random
 from collections import Counter
 #This is all English words, each with a newline character appended to the end
