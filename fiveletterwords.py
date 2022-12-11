@@ -4,11 +4,12 @@
 import random
 from collections import Counter
 #This is all English words, each with a newline character appended to the end
-all_English_words = open(r'/Users/odin/Downloads/wordsEn.txt')
-
+all_English_words = open('WordsEn.txt')
+many_English_words = open('popular 5-letter words.csv')
 #all_playable is all words with 5 total letters and 5 unique letters.
 #Newline character at the end of each word accounts for len=6 instead of 5
-all_playable=[a[:5] for a in all_English_words if len(a)==6 and len(set(a))==6]
+#all_playable=[a[:5] for a in all_English_words if len(a)==6 and len(set(a))==6]
+all_playable = [a[:5] for a in many_English_words if len(set(a))==6]
 #all_playable is all words that can be chosen as Player 1, or guessed by other players.
 #whittled_list  is all words that are still possibilities, based on previous guesses.
 #Initialize whittled_list to all_playable

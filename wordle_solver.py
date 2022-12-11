@@ -12,6 +12,8 @@ import re
 #Import the dictionary
 all_English_words = open('wordsEn.txt')
 words5=[a[:5] for a in all_English_words if len(a)==6]
+popular_English_words=open('popular 5-letter words.csv')
+popwords5=[word[:5] for word in popular_English_words]
 
 def process_guess(guessword,targetword):
     guess=[c for c in guessword]
@@ -67,6 +69,8 @@ def play_wordle(wordlist,target_word=""):
         print(str(len(possible_words)) + possible_word_s)
         if len(possible_words)>6000:
             guess_word='aloes'
+        elif len(possible_words)==3088:
+            guess_word='arose'
         else:
             guess_word=find_best_guess(wordlist,possible_words)
         response=process_guess(guess_word,target_word)
