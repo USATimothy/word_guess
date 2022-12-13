@@ -3,20 +3,24 @@
 
 import random
 from collections import Counter
-#This is all English words, each with a newline character appended to the end
+#These are lists of English words, each with a newline character appended to the end.
+#all_English_words is a larger dictionary than many_English_words.
 all_English_words = open('WordsEn.txt')
 many_English_words = open('popular 5-letter words.csv')
-#all_playable is all words with 5 total letters and 5 unique letters.
-#Newline character at the end of each word accounts for len=6 instead of 5
-#all_playable=[a[:5] for a in all_English_words if len(a)==6 and len(set(a))==6]
-all_playable = [a[:5] for a in many_English_words if len(set(a))==6]
-#all_playable is all words that can be chosen as Player 1, or guessed by other players.
-#whittled_list  is all words that are still possibilities, based on previous guesses.
-#Initialize whittled_list to all_playable
-whittled_list=all_playable
+#These dictionaries pare down the lists to five-letter words with 5 unique letters.
+#The newline character at the end of each word accounts for len=6 instead of 5
+all_dictionary=[a[:5] for a in all_English_words if len(a)==6 and len(set(a))==6]
+common_dictionary = [a[:5] for a in many_English_words if len(set(a))==6]
 
 
+#The computer will guess a word. The human player will come up with a word
+#and respond with how many letters that target word has in common with each
+#computer guess.
 def guess_word(strategy,all_playable):
+    #all_playable is all words that can be guessed.
+    #whittled_list is all words that can possibly be the correct guess, given
+    #the information from previous guesses. Before the first guess, the lists
+    #are the same.
     whittled_list=all_playable
     k=0
     while k<100:#If k>100, something wrong happened.
@@ -62,12 +66,23 @@ def guess_word(strategy,all_playable):
                 whittled_list.remove(guess)
         whittled_list=[word for word in whittled_list if len(set(guess) & set(word))==x]
         if whittled_list==[]:
-            print('Error: possible mistake in counting common letters')
+            revealed_word = str(input('You stumped me! What was your word?\n')).lower()
+            lrw=len(revealed_word)
+            if lrw!=5:
+                print('Error: ' + revealed_word + ' has ' + str(lrw) + ' letters.' + 
+                      '\nOnly 5 letter words are allowed.')
+            elif len(set(revealed_word))<5:
+                print('Error: that word does not have 5 unique letters.')  
+            elif revealed_word not in all_playable:
+                print('That word is not in my dictionary. I should learn more words!')
+            else:
+                print("Maybe I'm not very good at this game, or maybe " +
+                      "one of your responses was inaccurate?")
             return ()
     print('Found in ' + str(k) + ' guesses')
     return(k,guess)
 
 if __name__ == "__main__":
     print('Pick a 5-letter word with all unique letters')
-    game=guess_word('random',all_playable)
+    game=guess_word('random',common_dictionary)
     print(game)
