@@ -15,7 +15,10 @@ words5=[a[:5] for a in all_English_words if len(a)==6]
 popular_English_words=open('popular 5-letter words.csv')
 popwords5=[word[:5] for word in popular_English_words]
 
+#Process guess compares a guess word to the target word and returns the result:
+    # 2 for a correct letter in the correct place, 1 for a correct letter in another place.    
 def process_guess(guessword,targetword):
+    #Convert words from strings to lists
     guess=[c for c in guessword]
     target=[c for c in targetword]
     response = [0,0,0,0,0]
@@ -32,6 +35,8 @@ def process_guess(guessword,targetword):
                 break
     return tuple(response)
 
+#evaluate_guess checks one guess word against a list of possible target words.
+#It then counts the number of instances of each possible response.
 def evaluate_guess(guessword,targetlist):
     responses=[]
     for targetword in targetlist:
@@ -39,6 +44,8 @@ def evaluate_guess(guessword,targetlist):
     response_split=Counter(responses)
     return response_split
 
+#find_best_guess calls evaluate_guess for every word in the guess list.
+#It chooses the guess that trims the target list most effectively.
 def find_best_guess(guesslist,targetlist):
     bestbin=len(targetlist)+1
     bestguess='apple'
@@ -53,10 +60,13 @@ def find_best_guess(guesslist,targetlist):
                 bestguess=guessword
     return bestguess
 
+#whittle_list finds all the words in the target list that match the response
 def whittle_list(guess,response,targetlist):
     return [word for word in targetlist if process_guess(guess,word)==response]
 
-def play_wordle(wordlist,target_word=""):
+#this routine tests the solver by printing how drastically each successive
+#guess reduces the number of possible words
+def check_solver(wordlist,target_word=""):
     if not target_word:
         target_word=random.choice(wordlist)
     possible_words=wordlist
@@ -93,20 +103,20 @@ def get_response(ask_string):
         else:
             print('Response must be 5 numbers separated by commas')
     return math_response
+
     
 def solve_wordle(word_list):
     message = ("When entering responses, type 2 for correct letter and place; " + 
     "type 1 for correct letter and wrong place; type 0 for wrong letters. " +
-    "Separate letters with commas.  For example, if the guess is SPORT " +
-    "and the answer is BROWN, type 0,0,2,1,0\n")
+    "For example, if the guess is SPORT and the answer is BROWN, type 00210\n" + 
+    "Letters earlier in the word take priority -- if the guess is SPEED " +
+    "and the answer is CHUTE, type 00100, not 00010.")
     print(message)
-    print('Guess "aloes"')
-    response=get_response('What is the response for the guess "aloes"?\n')
+    response=get_response('What is the response for ALOES?\n')
     possible_words=whittle_list("aloes",response,word_list)
     while sum(response)<10:
         guess_word=find_best_guess(word_list,possible_words)
-        print('Guess "' + guess_word)
-        response=get_response('What is the response for your guess?\n')
+        response=get_response("What is the response for " + guess_word.upper() + "?\n")
         possible_words=whittle_list(guess_word,response,possible_words)
     
     
