@@ -3,6 +3,7 @@
 
 import random
 from collections import Counter
+import re
 #These are lists of English words, each with a newline character appended to the end.
 #all_English_words is a larger dictionary than many_English_words.
 all_English_words = open('WordsEn.txt')
@@ -13,75 +14,91 @@ all_dictionary=[a[:5] for a in all_English_words if len(a)==6 and len(set(a))==6
 common_dictionary = [a[:5] for a in many_English_words if len(set(a))==6]
 
 
-#The computer will guess a word. The human player will come up with a word
-#and respond with how many letters that target word has in common with each
-#computer guess.
+def best_guess(word_list,all_playable,strategy='no big bucket'):
+    if strategy=='random':
+        guess = random.choice(word_list)
+    else:
+        #The next two strategies look at which guess splits the possible words
+        #into as many small buckets as possible, with a different bucket for
+        #words that have 0,1,2,3,4, or 5 letters in common.
+        q=len(word_list)/6
+        S=[]
+        if q<2:
+            guesses=word_list
+        else:
+            guesses=all_playable
+        for g in guesses:
+            count0to5=Counter([len(set(g)&set(wl)) for wl in word_list])
+            if strategy=='even_buckets':
+                s=0
+                for i in range(6):
+                    s+=(count0to5[i]-q)**2
+            else: #the default "no big bucket" strategy
+                s=count0to5.most_common()[0][1]
+            S.append(s)
+        guess=guesses[S.index(min(S))]
+    return guess
+
+#The human player will come up with a target word, and the computer will try to
+#guess it. The human player responds to each computer guess with 
+#with how many letters the guess and the target have in common.
 def guess_word(strategy,all_playable):
     #all_playable is all words that can be guessed.
     #whittled_list is all words that can possibly be the correct guess, given
     #the information from previous guesses. Before the first guess, the lists
     #are the same.
     whittled_list=all_playable
-    k=0
-    while k<100:#If k>100, something wrong happened.
-        if strategy=='random':
-            #This strategy picks a word at random from the whittled_list.
-            guess=random.choice(whittled_list)
-        if strategy=='even_buckets':
-            #This strategy picks the word that has the most evenly sized buckets
-            #for words that have 0 to 5 letters in common with the guess
-            q=len(whittled_list)/6
-            S=[]
-            if q<2:
-                guesses=whittled_list
-            else:
-                guesses=all_playable
-            for g in guesses:
-                count0to5=Counter([len(set(g)&set(wl)) for wl in whittled_list])
-                s=0
-                for i in range(6):
-                    s+=(count0to5[i]-q)**2
-                S.append(s)
-            guess=guesses[S.index(min(S))]
-        if strategy=='no_big_bucket':
-            #This strategy looks at which guess has the fewest words that share
-            #0,1,2,3,4, or 5 letters with it, whichever is most.
-            q=len(whittled_list)/6
-            S=[]
-            if q<2:
-                guesses=whittled_list
-            else:
-                guesses=all_playable
-            for g in guesses:
-                count0to5=Counter([len(set(g)&set(wl)) for wl in whittled_list])
-                s=count0to5.most_common()[0][1]
-                S.append(s)
-            guess=guesses[S.index(min(S))]
-        k+=1
-        x=int(input('How many letters does your word have in common with ' + guess + '?\n'))        
-        if x==5:
+    guesses=[]
+    responses=[]
+    guess_number=0
+    while guess_number<100:#If it takes more than 100 guesses, omething wrong happened.
+        guess=best_guess(whittled_list,all_playable,strategy)   
+        guess_number+=1
+        response=int(input('How many letters does your word have in common with ' + guess + '?\n'))        
+        guesses.append(guess)
+        responses.append(response)
+        if response==5:
             if input('Is it your word?\n')[0] in ['1','y','Y']:
                 break
             else:
                 whittled_list.remove(guess)
-        whittled_list=[word for word in whittled_list if len(set(guess) & set(word))==x]
+        whittled_list=[word for word in whittled_list if len(set(guess) & set(word))==response]
         if whittled_list==[]:
             revealed_word = str(input('You stumped me! What was your word?\n')).lower()
-            lrw=len(revealed_word)
-            if lrw!=5:
-                print('Error: ' + revealed_word + ' has ' + str(lrw) + ' letters.' + 
-                      '\nOnly 5 letter words are allowed.')
-            elif len(set(revealed_word))<5:
-                print('Error: that word does not have 5 unique letters.')  
-            elif revealed_word not in all_playable:
-                print('That word is not in my dictionary. I should learn more words!')
-            else:
-                print("Maybe I'm not very good at this game, or maybe " +
-                      "one of your responses was inaccurate?")
+            error_message=check_answers(revealed_word,guesses,responses,all_playable)
+            print('\n' + error_message)
+            print('Please try again.')
             return ()
-    print('Found in ' + str(k) + ' guesses')
-    return(k,guess)
+    print('Found in ' + str(guess_number) + ' guesses')
+    return(guess_number,guess)
 
+def check_answers(revealed_target,guessed_words,responses,all_playable):
+    lrw = len(revealed_target)
+    if revealed_target in guessed_words:
+        error_message='Oops. I thought I had guessed that already.'
+    elif lrw!=5:
+        error_message=('Error: ' + revealed_target + ' has ' + str(lrw) + ' letters.' + 
+              '\nOnly 5 letter words are allowed.')
+    elif not re.search('[a-zA-Z]{5}',revealed_target):
+        error_message='Error: word must contain only alphabetic characters a-z.'
+    elif len(set(revealed_target))<5:
+        error_message='Error: that word does not have 5 unique letters.'
+    elif revealed_target not in all_playable:
+        error_message='That word is not in my dictionary. I should learn more words!'
+    else:
+        for guess,response in zip(guessed_words,responses):
+            correct_response = len(set(guess) & set(revealed_target))
+            if response!=correct_response:
+                error_message=(guess + ' and ' + revealed_target + ' have ' +
+                               str(correct_response) + ' letters in common, not ' +
+                               str(response) + '.')
+                break
+        else:
+            error_message= 'Great game! I guess I need to practice some more.'
+
+    return error_message
+                
+        
 if __name__ == "__main__":
     print('Pick a 5-letter word with all unique letters')
     game=guess_word('random',common_dictionary)
