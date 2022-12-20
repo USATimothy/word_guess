@@ -51,10 +51,18 @@ def guess_word(strategy,all_playable):
     guesses=[]
     responses=[]
     guess_number=0
-    while guess_number<100:#If it takes more than 100 guesses, omething wrong happened.
+    while guess_number<100:#If it takes more than 100 guesses, something wrong happened.
         guess=best_guess(whittled_list,all_playable,strategy)   
         guess_number+=1
-        response=int(input('How many letters does your word have in common with ' + guess + '?\n'))        
+        while True:
+            try:
+                response=int(input('How many letters does your word have in common with ' + guess + '?\n'))        
+                if response in [0,1,2,3,4,5]:
+                    break
+                else:
+                    print('The response must be an integer 0-5. Please try again')
+            except:
+                print('The response must be an integer 0-5. Please try again')
         guesses.append(guess)
         responses.append(response)
         if response==5:
@@ -97,7 +105,27 @@ def check_answers(revealed_target,guessed_words,responses,all_playable):
             error_message= 'Great game! I guess I need to practice some more.'
 
     return error_message
-                
+
+#Computer chooses a word. Human tries to guess it
+def human_play(all_playable):
+    target=random.choice(all_playable)
+    guess_number=0
+    guesses=[]
+    responses=[]
+    while guess_number<100:
+        guess=str(input('What is your guess?\n')).lower()
+        if guess == target:
+            print('Congratulations! You got it!')
+            return
+        elif guess not in all_playable:
+            print('Only common five-letter words with all unique letters are allowed.')
+        else:
+            response=len(set(guess) & set(target))
+            guess_number+=1
+            guesses.append(guess)
+            responses.append(response)
+            print('My word has ' + str(response) + ' letter(s) in common with ' + guess + '.')
+            
         
 if __name__ == "__main__":
     print('Pick a 5-letter word with all unique letters')
