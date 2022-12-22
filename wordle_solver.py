@@ -112,12 +112,48 @@ def solve_wordle(word_list):
     "Letters earlier in the word take priority -- if the guess is SPEED " +
     "and the answer is CHUTE, type 00100, not 00010.")
     print(message)
-    response=get_response('What is the response for ALOES?\n')
-    possible_words=whittle_list("aloes",response,word_list)
+    possible_words=word_list
+    guesses=['arose']
+    responses=[]
+    guess_word='arose' #saves computation time, since first guess is always the same
+    response=get_response("What is the response for " + guess_word.upper() + "?\n")
+    responses.append(response)
+    possible_words=whittle_list(guess_word,response,possible_words)    
     while sum(response)<10:
         guess_word=find_best_guess(word_list,possible_words)
         response=get_response("What is the response for " + guess_word.upper() + "?\n")
+        guesses.append(guess_word)
+        responses.append(response)
         possible_words=whittle_list(guess_word,response,possible_words)
-    
+        if len(possible_words)<1:
+            revealed_word = str(input('You stumped me! What was your word?\n')).lower()
+            error_message=check_answers(revealed_word,guesses,responses,word_list)
+            print('\n' + error_message)
+            print('Please try again.')
+            return
+
+def check_answers(revealed_target,guessed_words,responses,all_playable):
+    lrw = len(revealed_target)
+    if revealed_target in guessed_words:
+        error_message='Oops. I thought I had guessed that already.'
+    elif lrw!=5:
+        error_message=('Error: ' + revealed_target + ' has ' + str(lrw) + ' letters.' + 
+              '\nOnly 5 letter words are allowed.')
+    elif not re.search('[a-zA-Z]{5}',revealed_target):
+        error_message='Error: word must contain only alphabetic characters a-z.'
+    elif revealed_target not in all_playable:
+        error_message='That word is not in my dictionary. I should learn more words!'
+    else:
+        for guess,response in zip(guessed_words,responses):
+            correct_response = process_guess(guess,revealed_target)
+            if response!=correct_response:
+                error_message=(guess + ' and ' + revealed_target + ' sohould be' +
+                               str(correct_response) + ' not ' +
+                               str(response) + '.')
+                break
+        else:
+            error_message= 'Great game! I guess I need to practice some more.'
+
+    return error_message
     
                    
